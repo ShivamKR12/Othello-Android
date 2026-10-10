@@ -5,7 +5,7 @@ IMPROVEMENTS TO BE MADE:
 
 1. [FIXED] Add a confirmation dialog asking if the player is sure they want to reset the board, to prevent misclick resets. 
 2. [FIXED] Run a simulation on this exact code to find in which scenarios exactly the game is getting stuck at the very last move of the game, where neither the player nor the computer can make the next move !?
-3. Move the hud_str to the center at the top center of the screen, slightly below the very top of the screen, so it does not get's covered by the camera notches or top screen info tray.
+3. [FIXED] Move the hud_str to the center at the top center of the screen, slightly below the very top of the screen, so it does not get's covered by the camera notches or top screen info tray.
 """
 
 import random
@@ -338,7 +338,8 @@ class Othello:
         scores = self.get_score_of_board(self.main_board)
         hud_str = f"Player: {scores[self.player_tile]} | Computer: {scores[self.computer_tile]} | Turn: {str(self.turn).capitalize()}"
         hud_surf = self.font.render(hud_str, True, WHITE)
-        self.screen.blit(hud_surf, (20, 20))
+        hud_rect = hud_surf.get_rect(midtop=(self.width // 2, 45))
+        self.screen.blit(hud_surf, hud_rect)
 
         if is_portrait:
             # Massive oversized button configurations optimized for clear thumb targets

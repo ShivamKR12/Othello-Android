@@ -4,7 +4,7 @@
 IMPROVEMENTS TO BE MADE: 
 
 1. [FIXED] Add a confirmation dialog asking if the player is sure they want to reset the board, to prevent misclick resets. 
-2. Run a simulation on this exact code to find in which scenarios exactly the game is getting stuck at the very last move of the game, where neither the player nor the computer can make the next move !?
+2. [FIXED] Run a simulation on this exact code to find in which scenarios exactly the game is getting stuck at the very last move of the game, where neither the player nor the computer can make the next move !?
 3. Move the hud_str to the center at the top center of the screen, slightly below the very top of the screen, so it does not get's covered by the camera notches or top screen info tray.
 """
 
@@ -191,7 +191,7 @@ class Othello:
                     self.reset_board(self.main_board)
                     self.turn = random.choice(['computer', 'player'])
                     self.game_over = False
-        self.awaiting_reset_confirmation = False
+                    self.awaiting_reset_confirmation = False
                     self.consecutive_passes = 0
                 elif label == "HINTS":
                     self.show_hints = not self.show_hints
@@ -252,6 +252,12 @@ class Othello:
             else:
                 print(f"[PASS] Computer has NO legal moves at ({empty_squares} empty squares left). Forcing Pass to Player.")
                 self.turn = 'player'
+        elif self.turn == 'player' and not self.game_over:
+            if not player_moves:
+                print(f"[PASS] Player has NO legal moves at ({empty_squares} empty squares left). Forcing Pass to Computer.")
+                # We can add a slight delay here so the user realizes their turn was skipped
+                pygame.time.wait(600)
+                self.turn = 'computer'
 
     def draw(self):
         self.screen.fill(BLACK)
@@ -389,8 +395,8 @@ class Othello:
         btn_w, btn_h = 180, 95
         side_offset = 120
         vertical_offset = 50
-        self.draw_btn('CONFIRM_YES', map_center[0] - side_offset, map_center[1] + vertical_offset, btn_w, btn_h, self.ui_buttons, self.font)
-        self.draw_btn('CONFIRM_NO', map_center[0] + side_offset, map_center[1] + vertical_offset, btn_w, btn_h, self.ui_buttons, self.font)
+        self.draw_btn('YES', map_center[0] - side_offset, map_center[1] + vertical_offset, btn_w, btn_h, self.ui_buttons, self.font)
+        self.draw_btn('NO', map_center[0] + side_offset, map_center[1] + vertical_offset, btn_w, btn_h, self.ui_buttons, self.font)
 
     def draw_game_over_overlay(self, map_center):
         scores = self.get_score_of_board(self.main_board)

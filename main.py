@@ -3,7 +3,7 @@
 """
 IMPROVEMENTS TO BE MADE: 
 
-1. Add a confirmation dialog asking if the player is sure they want to reset the board, to prevent misclick resets. 
+1. [FIXED] Add a confirmation dialog asking if the player is sure they want to reset the board, to prevent misclick resets. 
 2. Run a simulation on this exact code to find in which scenarios exactly the game is getting stuck at the very last move of the game, where neither the player nor the computer can make the next move !?
 3. Move the hud_str to the center at the top center of the screen, slightly below the very top of the screen, so it does not get's covered by the camera notches or top screen info tray.
 """
@@ -70,6 +70,7 @@ class Othello:
         self.turn = None
         self.consecutive_passes = 0
         self.game_over = False
+        self.awaiting_reset_confirmation = False
         
         # Start game setup flow
         self.selecting_color = True
@@ -129,7 +130,7 @@ class Othello:
         if self.check_ui_clicks(pos):
             return
 
-        if self.selecting_color or self.game_over:
+        if self.selecting_color or self.game_over or getattr(self, 'awaiting_reset_confirmation', False):
             return
 
         if self.turn == 'player':
@@ -144,6 +145,21 @@ class Othello:
                     print(f"[REJECTED] Player tried to tap ({x}, {y}), but it flips 0 pieces!")
 
     def check_ui_clicks(self, pos):
+        # Reset Confirmation Screen Interfaces
+        if getattr(self, 'awaiting_reset_confirmation', False):
+            for choice, rect in self.ui_buttons.items():
+                if rect.collidepoint(pos):
+                    if choice == 'CONFIRM_YES':
+                        self.reset_board(self.main_board)
+                        self.turn = random.choice(['computer', 'player'])
+                        self.game_over = False
+                        self.consecutive_passes = 0
+                        self.awaiting_reset_confirmation = False
+                    elif choice == 'CONFIRM_NO':
+                        self.awaiting_reset_confirmation = False
+                    return True
+            return False
+
         # Color Setup Screen Interfaces
         if self.selecting_color:
             for choice, rect in self.ui_buttons.items():
@@ -175,6 +191,7 @@ class Othello:
                     self.reset_board(self.main_board)
                     self.turn = random.choice(['computer', 'player'])
                     self.game_over = False
+        self.awaiting_reset_confirmation = False
                     self.consecutive_passes = 0
                 elif label == "HINTS":
                     self.show_hints = not self.show_hints
@@ -212,7 +229,7 @@ class Othello:
         return None
 
     def update(self):
-        if self.selecting_color or self.game_over:
+        if self.selecting_color or self.game_over or getattr(self, 'awaiting_reset_confirmation', False):
             return
 
         player_moves = self.get_valid_moves(self.main_board, self.player_tile)
@@ -276,7 +293,9 @@ class Othello:
             self.draw_color_selection_overlay(map_center)
         else:
             self.draw_ui(is_portrait, board_rect)
-            if self.game_over:
+            if getattr(self, 'awaiting_reset_confirmation', False):
+                self.draw_reset_confirmation_overlay(map_center)
+            elif self.game_over:
                 self.draw_game_over_overlay(map_center)
 
         pygame.display.update()
@@ -355,6 +374,23 @@ class Othello:
         self.draw_btn('WHITE', map_center[0] - side_offset, map_center[1] + vertical_offset, btn_w, btn_h, self.ui_buttons, self.font)
         self.draw_btn('BLACK', map_center[0] + side_offset, map_center[1] + vertical_offset, btn_w, btn_h, self.ui_buttons, self.font)
 
+
+    def draw_reset_confirmation_overlay(self, map_center):
+        card_w, card_h = 550, 320
+        overlay = pygame.Surface((card_w, card_h), pygame.SRCALPHA)
+        pygame.draw.rect(overlay, (15, 15, 15, 230), overlay.get_rect(), border_radius=20)
+        
+        title_surf = self.large_font.render('Reset Board?', True, WHITE)
+        title_rect = title_surf.get_rect(center=(card_w // 2, 60))
+        overlay.blit(title_surf, title_rect)
+        
+        self.screen.blit(overlay, overlay.get_rect(center=map_center))
+        
+        btn_w, btn_h = 180, 95
+        side_offset = 120
+        vertical_offset = 50
+        self.draw_btn('CONFIRM_YES', map_center[0] - side_offset, map_center[1] + vertical_offset, btn_w, btn_h, self.ui_buttons, self.font)
+        self.draw_btn('CONFIRM_NO', map_center[0] + side_offset, map_center[1] + vertical_offset, btn_w, btn_h, self.ui_buttons, self.font)
 
     def draw_game_over_overlay(self, map_center):
         scores = self.get_score_of_board(self.main_board)
